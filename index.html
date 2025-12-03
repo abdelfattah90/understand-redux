@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل Redux التفاعلي | Understanding Redux</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts (Cairo for Arabic) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Warm Neutrals & Tech Indigo -->
+    <!-- Background: #F8FAFC (Slate 50) -->
+    <!-- Text: #1E293B (Slate 800) -->
+    <!-- Primary: #4F46E5 (Indigo 600) -->
+    <!-- Secondary: #F59E0B (Amber 500) - Used for 'Actions' -->
+    <!-- Accent: #10B981 (Emerald 500) - Used for 'State' -->
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            overflow-x: hidden;
+        }
+        
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Chart Container Styling - Mandatory per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-action {
+            animation: pulseAction 0.5s ease-in-out;
+        }
+
+        @keyframes pulseAction {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        /* Flow connection lines using pure CSS (No SVG) */
+        .connector-line {
+            width: 2px;
+            background-color: #CBD5E1;
+            transition: background-color 0.3s, height 0.3s;
+        }
+        .connector-line.active {
+            background-color: #4F46E5;
+        }
+    </style>
+
+    <!-- Application Structure Plan: 
+         1. Hero Section: Hook the user with the core promise (Easiest Guide).
+         2. The Problem (Context): Why do we need Redux? Interactive Chart comparing complexity.
+         3. The Analogy (Bank System): Connecting abstract concepts to real life. Interactive simulation.
+         4. The Redux Cycle (Interactive Diagram): Users click 'Dispatch' and watch the flow visually move from Action -> Reducer -> Store -> UI.
+         5. Code Playground: Simplified interactive coding block to see how syntax looks.
+         This structure moves from "Why" -> "Conceptual How" -> "Technical How", ensuring deep understanding.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Comparison Chart (Chart.js): Visualizes 'State Management Difficulty' vs 'App Size'. Goal: Justify learning Redux.
+         2. Bank Analogy (DOM Manipulation): Uses CSS shapes for Bank/Vault. Goal: Mental mapping.
+         3. Redux Data Flow (CSS Grid + JS): Boxes representing components lighting up sequentially. Goal: Visualize the unseen data flow.
+         4. NO SVG/Mermaid: All icons are Unicode or CSS shapes. All diagrams are HTML/CSS layouts.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-indigo-600">Redux<span class="text-slate-600 text-lg font-normal mx-2">بالعربي</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8 space-x-reverse">
+                    <a href="#intro" class="text-slate-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">البداية</a>
+                    <a href="#why-redux" class="text-slate-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">لماذا Redux؟</a>
+                    <a href="#analogy" class="text-slate-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">المثال العملي</a>
+                    <a href="#technical" class="text-slate-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">التطبيق التقني</a>
+					
+					  
+                </div>
+            </div>
+        </div>
+    </nav>
+	<div class="lg:text-center mb-12 pt-6 text-2xl underline text-blue-600">
+	
+<p><a href="https://medium.com/free-code-camp/understanding-redux-the-worlds-easiest-guide-to-beginning-redux-c695f45546f6" target="_blanck"  >رابطة المقالة الأصلية Medium</a></p>
+	</div>						
+    <!-- Hero Section -->
+    <header id="intro" class="relative bg-white overflow-hidden border-b border-slate-100">
+        <div class="max-w-7xl mx-auto">
+            <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+                <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">	
+                    
+                    <div class="sm:text-center lg:text-right">
+					
+                        <h1 class="text-4xl tracking-tight font-extrabold text-slate-900 sm:text-5xl md:text-6xl">
+                            <span class="block xl:inline">افهم Redux</span>
+                            <span class="block text-indigo-600 xl:inline">بأبسط طريقة ممكنة</span>
+                        </h1>
+                        <p class="mt-3 text-base text-slate-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                            هل تشعر أن مصطلحات <span dir="ltr" class="font-mono bg-slate-100 px-1 rounded text-indigo-600">State Management</span> و <span dir="ltr" class="font-mono bg-slate-100 px-1 rounded text-indigo-600">Reducers</span> معقدة؟
+                            هذا الدليل التفاعلي سيشرح لك المفاهيم الأساسية وكيف تترابط معاً لتجعل تطبيقاتك أكثر استقراراً.
+                        </p>
+                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                            <div class="rounded-md shadow">
+                                <a href="#why-redux" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg transition">
+                                    ابدأ الرحلة
+                                </a>
+                            </div>
+					  </div>
+                  	  </div>
+                </main>
+            </div>
+        </div>
+        <div class="lg:absolute lg:inset-y-0 lg:left-0 lg:w-1/2 bg-slate-50 flex items-center justify-center border-r border-slate-100">
+            <div class="text-center p-8">
+                <div class="text-9xl mb-4">⚛️ 🔄</div>
+                <p class="text-slate-400 font-mono">Action ➜ Reducer ➜ Store</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECTION 1: Why Redux? (Data Viz) -->
+    <section id="why-redux" class="py-16 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center mb-12">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">المشكلة والحل</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                    لماذا نحتاج إلى Redux؟
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-slate-500 lg:mx-auto">
+                    عندما يكبر حجم التطبيق، يصبح تتبع البيانات (State) أمراً فوضوياً. Redux يأتي ليجعل هذا التدفق متوقعاً ومنظماً.
+                </p>
+            </div>
+
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-100">
+                    <h3 class="text-lg font-medium text-slate-900 mb-4 text-center">تعقيد إدارة الحالة (State Complexity)</h3>
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="complexityChart"></canvas>
+                    </div>
+                    <p class="text-sm text-center text-slate-400 mt-4">
+                        الرسم البياني يوضح كيف يحافظ Redux على ثبات صعوبة الصيانة مع نمو التطبيق.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white text-xl">
+                                🕸️
+                            </div>
+                        </div>
+                        <div class="mr-4">
+                            <h4 class="text-lg leading-6 font-medium text-slate-900">بدون Redux (الفوضى)</h4>
+                            <p class="mt-2 text-base text-slate-500">
+                                البيانات تنتقل بين المكونات بشكل عشوائي (Props Drilling). إذا حدث خطأ، من الصعب معرفة مصدره.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-emerald-500 text-white text-xl">
+                                🛡️
+                            </div>
+                        </div>
+                        <div class="mr-4">
+                            <h4 class="text-lg leading-6 font-medium text-slate-900">مع Redux (النظام)</h4>
+                            <p class="mt-2 text-base text-slate-500">
+                                يوجد "مصدر واحد للحقيقة" (<span dir="ltr" class="font-mono text-indigo-600 text-xs">Single Source of Truth</span>). البيانات تتدفق في اتجاه واحد فقط، مما يجعل التطبيق قابلاً للتوقع.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: The Analogy (Bank System) -->
+    <section id="analogy" class="py-16 bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-10">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">تشبيه من الواقع</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900">
+                    Redux يشبه "البنك"
+                </p>
+                <p class="mt-4 max-w-4xl mx-auto text-lg text-slate-500">
+                    لفهم المصطلحات التقنية، دعنا نتخيل أنك تذهب للبنك. لا يمكنك الدخول للخزنة وأخذ المال بيدك (تغيير الـ State مباشرة). يجب أن تتبع نظاماً محدداً.
+                </p>
+            </div>
+
+            <!-- Analogy Interactive Playground -->
+            <div class="bg-slate-50 rounded-2xl p-8 border border-slate-200 shadow-inner">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center relative">
+                    
+                    <!-- Actor 1: The User (Action Creator) -->
+                    <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border-2 border-transparent transition-all duration-300" id="card-action">
+                        <div class="text-5xl mb-4">👤</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">أنت (المكون Component)</h3>
+                        <p class="text-sm text-slate-500 mb-4">تريد إيداع أو سحب أموال. أنت تقوم بإنشاء طلب.</p>
+                        
+                        <div class="space-y-2 w-full">
+                            <button onclick="simulateBank('DEPOSIT')" class="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-2 px-4 rounded font-bold transition">
+                                إيداع 10$ (Action)
+                            </button>
+                            <button onclick="simulateBank('WITHDRAW')" class="w-full bg-red-100 text-red-700 hover:bg-red-200 py-2 px-4 rounded font-bold transition">
+                                سحب 10$ (Action)
+                            </button>
+                        </div>
+                        <div class="mt-4 text-xs font-mono text-slate-400 bg-slate-100 p-2 rounded w-full text-left" dir="ltr">
+                            dispatch({ type: '<span id="action-type-display">...</span>' })
+                        </div>
+                    </div>
+
+                    <!-- Arrow/Flow Indicator -->
+                    <div class="hidden md:flex flex-col justify-center items-center text-slate-300">
+                        <span class="text-4xl">➜</span>
+                        <span class="text-xs mt-2 font-mono text-indigo-500">Dispatch</span>
+                    </div>
+
+                    <!-- Actor 2: The Teller (Reducer) -->
+                    <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border-2 border-transparent transition-all duration-300" id="card-reducer">
+                        <div class="text-5xl mb-4">👩‍💼</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">الصراف (Reducer)</h3>
+                        <p class="text-sm text-slate-500 mb-4">يستلم طلبك، يراجع الرصيد الحالي، ويحسب الرصيد الجديد.</p>
+                        <div class="bg-indigo-50 p-3 rounded w-full">
+                            <p class="text-xs font-bold text-indigo-800 mb-1">المنطق:</p>
+                            <p class="text-xs text-indigo-600" id="reducer-logic">في انتظار الطلب...</p>
+                        </div>
+                    </div>
+
+                    <!-- Arrow/Flow Indicator -->
+                    <div class="hidden md:flex flex-col justify-center items-center text-slate-300">
+                        <span class="text-4xl">➜</span>
+                        <span class="text-xs mt-2 font-mono text-indigo-500">Update</span>
+                    </div>
+
+                    <!-- Actor 3: The Vault (Store) -->
+                    <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border-2 border-transparent transition-all duration-300" id="card-store">
+                        <div class="text-5xl mb-4">🏦</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">الخزنة (Store)</h3>
+                        <p class="text-sm text-slate-500 mb-4">المكان الوحيد الذي يحفظ الأموال (State). يتم تحديثه فقط بواسطة الصراف.</p>
+                        <div class="bg-slate-800 text-green-400 font-mono text-2xl p-4 rounded-lg w-full shadow-inner">
+                            $<span id="bank-balance">100</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                    <h4 class="font-bold text-indigo-700">The Store (الخزنة)</h4>
+                    <p class="text-sm text-indigo-600 mt-1">كائن (Object) واحد يحمل كل بيانات التطبيق.</p>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                    <h4 class="font-bold text-amber-700">The Action (الطلب)</h4>
+                    <p class="text-sm text-amber-600 mt-1">وصف لما حدث (مثلاً: "سحب أموال").</p>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                    <h4 class="font-bold text-emerald-700">The Reducer (الصراف)</h4>
+                    <p class="text-sm text-emerald-600 mt-1">دالة (Function) تأخذ الحالة القديمة والحدث، وتُرجع الحالة الجديدة.</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                    <h4 class="font-bold text-purple-700">Dispatch (الإرسال)</h4>
+                    <p class="text-sm text-purple-600 mt-1">الطريقة الوحيدة لإيصال الحدث (Action) إلى الـ Store.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: Technical Implementation (Code Flow) -->
+    <section id="technical" class="py-16 bg-slate-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-10">
+                <h2 class="text-base text-indigo-400 font-semibold tracking-wide uppercase">كيف نكتب الكود؟</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-white">
+                    دورة حياة Redux
+                </p>
+                <p class="mt-4 text-slate-400">
+                    إليك كيف تترجم مثال البنك إلى كود JavaScript حقيقي. جرب الضغط على الأزرار لترى كيف تتدفق البيانات داخل الكود.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Controls & Visuals -->
+                <div class="lg:col-span-4 space-y-6">
+                    <!-- Control Panel -->
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <h3 class="text-lg font-bold mb-4 text-indigo-300">1. أطلق الحدث (Dispatch Action)</h3>
+                        <div class="space-y-3">
+                            <button onclick="runCodeFlow('INCREMENT')" class="w-full flex justify-between items-center bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg transition group">
+                                <span>زيادة العداد</span>
+                                <span class="font-mono text-xs bg-indigo-800 px-2 py-1 rounded text-indigo-200 group-hover:bg-indigo-900">{ type: 'INCREMENT' }</span>
+                            </button>
+                            <button onclick="runCodeFlow('DECREMENT')" class="w-full flex justify-between items-center bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 rounded-lg transition group">
+                                <span>إنقاص العداد</span>
+                                <span class="font-mono text-xs bg-slate-900 px-2 py-1 rounded text-slate-300 group-hover:bg-black">{ type: 'DECREMENT' }</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Current State Display -->
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 text-center">
+                        <h3 class="text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Current State UI</h3>
+                        <div class="text-6xl font-black text-white my-4" id="ui-counter">0</div>
+                        <p class="text-xs text-slate-500">يتم تحديث الواجهة تلقائياً عند تغيير الـ Store</p>
+                    </div>
+                </div>
+
+                <!-- Right Column: Code Blocks -->
+                <div class="lg:col-span-8 space-y-4 font-mono text-sm relative">
+                    
+                    <!-- Connection Lines (CSS borders simulate flow) -->
+                    <div class="absolute left-8 top-12 bottom-12 w-0.5 bg-slate-700 hidden lg:block"></div>
+
+                    <!-- Step 1: Action -->
+                    <div class="relative pl-12 lg:pl-16 transition-all duration-300 opacity-50" id="code-step-1">
+                        <div class="absolute left-0 top-4 w-8 h-8 lg:w-10 lg:h-10 bg-indigo-900 rounded-full flex items-center justify-center text-indigo-300 font-bold border-2 border-slate-700 z-10">1</div>
+                        <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                            <p class="text-slate-400 mb-2 border-b border-slate-700 pb-2">// Action Creator</p>
+                            <code class="block text-indigo-300" dir="ltr">
+                                const action = { type: '<span id="code-action-type">WAITING</span>' };<br>
+                                <span class="text-yellow-300">store.dispatch(action);</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Reducer -->
+                    <div class="relative pl-12 lg:pl-16 transition-all duration-300 opacity-50" id="code-step-2">
+                        <div class="absolute left-0 top-4 w-8 h-8 lg:w-10 lg:h-10 bg-indigo-900 rounded-full flex items-center justify-center text-indigo-300 font-bold border-2 border-slate-700 z-10">2</div>
+                        <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                            <p class="text-slate-400 mb-2 border-b border-slate-700 pb-2">// Reducer (Pure Function)</p>
+                            <code class="block text-emerald-300" dir="ltr">
+                                function counterReducer(state = 0, action) {<br>
+                                &nbsp;&nbsp;switch (action.type) {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;case 'INCREMENT': return <span id="code-logic-inc" class="bg-transparent transition-colors">state + 1;</span><br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;case 'DECREMENT': return <span id="code-logic-dec" class="bg-transparent transition-colors">state - 1;</span><br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;default: return state;<br>
+                                &nbsp;&nbsp;}<br>
+                                }
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: State Update -->
+                    <div class="relative pl-12 lg:pl-16 transition-all duration-300 opacity-50" id="code-step-3">
+                        <div class="absolute left-0 top-4 w-8 h-8 lg:w-10 lg:h-10 bg-indigo-900 rounded-full flex items-center justify-center text-indigo-300 font-bold border-2 border-slate-700 z-10">3</div>
+                        <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                            <p class="text-slate-400 mb-2 border-b border-slate-700 pb-2">// New State in Store</p>
+                            <code class="block text-blue-300" dir="ltr">
+                                { value: <span id="code-new-state" class="font-bold text-white">0</span> }
+                            </code>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Recap -->
+    <footer class="bg-white border-t border-slate-200 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6">ملخص سريع</h2>
+            <div class="flex flex-wrap justify-center gap-4 text-sm text-slate-600 mb-8">
+                <span class="bg-slate-100 px-4 py-2 rounded-full border border-slate-200">Redux هو حاوية للحالة (State Container)</span>
+                <span class="bg-slate-100 px-4 py-2 rounded-full border border-slate-200">الحالة للقراءة فقط (Read-only)</span>
+                <span class="bg-slate-100 px-4 py-2 rounded-full border border-slate-200">التغيير يحدث فقط عبر دوال نقية (Reducers)</span>
+            </div>
+            <p class="text-slate-400 text-sm">
+                مبني بناءً على المقالة "Understanding Redux: The World’s Easiest Guide to Beginning Redux"
+            </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. Chart.js Implementation (Why Redux?) ---
+        const ctx = document.getElementById('complexityChart').getContext('2d');
+        const complexityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Small App', 'Medium App', 'Large App', 'Enterprise'],
+                datasets: [
+                    {
+                        label: 'مع Redux (منظم)',
+                        data: [15, 25, 35, 45], // Linear growth
+                        borderColor: '#4F46E5', // Indigo 600
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'بدون Redux (فوضوي)',
+                        data: [10, 30, 70, 100], // Exponential chaos
+                        borderColor: '#EF4444', // Red 500
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Cairo' }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        titleFont: { family: 'Cairo' },
+                        bodyFont: { family: 'Cairo' }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'تعقيد إدارة البيانات (State Complexity)',
+                            font: { family: 'Cairo' }
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // --- 2. Bank Analogy Logic ---
+        let bankBalance = 100;
+
+        function simulateBank(actionType) {
+            const amount = 10;
+            const actionCard = document.getElementById('card-action');
+            const reducerCard = document.getElementById('card-reducer');
+            const storeCard = document.getElementById('card-store');
+            const logicText = document.getElementById('reducer-logic');
+            const balanceDisplay = document.getElementById('bank-balance');
+            const actionTypeDisplay = document.getElementById('action-type-display');
+
+            // Reset Styles
+            [actionCard, reducerCard, storeCard].forEach(el => el.classList.remove('border-indigo-500', 'shadow-xl', 'scale-105'));
+
+            // Step 1: Dispatch Action
+            actionTypeDisplay.innerText = actionType;
+            actionCard.classList.add('border-amber-500', 'shadow-xl', 'scale-105', 'bg-amber-50');
+            
+            setTimeout(() => {
+                actionCard.classList.remove('border-amber-500', 'shadow-xl', 'scale-105', 'bg-amber-50');
+                
+                // Step 2: Reducer Processing
+                reducerCard.classList.add('border-indigo-500', 'shadow-xl', 'scale-105', 'bg-indigo-50');
+                if(actionType === 'DEPOSIT') {
+                    logicText.innerHTML = `Action: DEPOSIT<br>Current: ${bankBalance} + 10`;
+                    bankBalance += amount;
+                } else {
+                    logicText.innerHTML = `Action: WITHDRAW<br>Current: ${bankBalance} - 10`;
+                    bankBalance -= amount;
+                }
+
+                setTimeout(() => {
+                    reducerCard.classList.remove('border-indigo-500', 'shadow-xl', 'scale-105', 'bg-indigo-50');
+                    logicText.innerText = "في انتظار الطلب...";
+
+                    // Step 3: Store Update
+                    storeCard.classList.add('border-emerald-500', 'shadow-xl', 'scale-105', 'bg-emerald-50');
+                    balanceDisplay.innerText = bankBalance;
+                    
+                    setTimeout(() => {
+                        storeCard.classList.remove('border-emerald-500', 'shadow-xl', 'scale-105', 'bg-emerald-50');
+                    }, 800);
+                }, 1000);
+            }, 800);
+        }
+
+        // --- 3. Technical Code Flow Logic ---
+        let codeCounter = 0;
+        let isCodeRunning = false;
+
+        function runCodeFlow(type) {
+            if(isCodeRunning) return;
+            isCodeRunning = true;
+
+            const step1 = document.getElementById('code-step-1');
+            const step2 = document.getElementById('code-step-2');
+            const step3 = document.getElementById('code-step-3');
+            const actionText = document.getElementById('code-action-type');
+            const logicInc = document.getElementById('code-logic-inc');
+            const logicDec = document.getElementById('code-logic-dec');
+            const newStateText = document.getElementById('code-new-state');
+            const uiCounter = document.getElementById('ui-counter');
+
+            // Reset visual state
+            [step1, step2, step3].forEach(el => {
+                el.classList.remove('opacity-100', 'scale-105');
+                el.classList.add('opacity-50');
+            });
+            logicInc.className = 'bg-transparent transition-colors';
+            logicDec.className = 'bg-transparent transition-colors';
+
+            // Phase 1: Create Action
+            actionText.innerText = type;
+            step1.classList.remove('opacity-50');
+            step1.classList.add('opacity-100', 'scale-105');
+
+            setTimeout(() => {
+                step1.classList.remove('scale-105');
+                
+                // Phase 2: Reducer Logic
+                step2.classList.remove('opacity-50');
+                step2.classList.add('opacity-100', 'scale-105');
+
+                if (type === 'INCREMENT') {
+                    codeCounter++;
+                    logicInc.className = 'bg-indigo-600 text-white px-1 rounded transition-colors';
+                } else {
+                    codeCounter--;
+                    logicDec.className = 'bg-indigo-600 text-white px-1 rounded transition-colors';
+                }
+
+                setTimeout(() => {
+                    step2.classList.remove('scale-105');
+                    
+                    // Phase 3: Store Update & UI
+                    step3.classList.remove('opacity-50');
+                    step3.classList.add('opacity-100', 'scale-105');
+                    newStateText.innerText = codeCounter;
+                    
+                    // Update UI ("The View")
+                    uiCounter.innerText = codeCounter;
+                    uiCounter.classList.add('text-indigo-400'); // Highlight effect
+
+                    setTimeout(() => {
+                        step3.classList.remove('scale-105');
+                        uiCounter.classList.remove('text-indigo-400');
+                        isCodeRunning = false;
+                    }, 800);
+                }, 1000);
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
