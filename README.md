@@ -4,10 +4,7 @@
 
 <p align="center">
   <a href="https://abdelfattah90.github.io/understand-redux/">
-    <img 
-      src="https://img.shields.io/badge/ابدأ_الرحلة-4b5cff?style=for-the-badge&logo=react&logoColor=white" 
-      alt="ابدأ الرحلة"
-    />
+    ابدأ الرحلة
   </a>
 </p>
 
