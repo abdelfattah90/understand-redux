@@ -1,9 +1,5 @@
 # 📘 **Redux** بأبسط طريقة ممكنة
 
-<p align="center">
-  <img src="https://i.imgur.com/5b6B0ju.png" width="80%" />
-</p>
-
 ---
 
 <p align="center">
